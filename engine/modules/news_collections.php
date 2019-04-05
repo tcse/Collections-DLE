@@ -332,7 +332,6 @@ if( $collections_id ) {
 		
 	$ajax .= <<<HTML
 <script>
-
 function doFavorites_collections( fav_id, event, alert ){
 	ShowLoading('');
 
