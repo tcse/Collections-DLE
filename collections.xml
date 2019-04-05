@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dleplugin>
+	<name>Collections</name>
+	<description>Подборки для DataLife Engine. По вопросам: teramoune@gmail.com</description>
+	<icon></icon>
+	<version></version>
+	<dleversion>13</dleversion>
+	<versioncompare>greater</versioncompare>
+	<mysqlinstall><![CDATA[CREATE TABLE {prefix}_news_collections (
+  `id` int(11) NOT NULL auto_increment,
+  `user_name` varchar(100) NOT NULL DEFAULT '',
+  `name` varchar(255) NOT NULL DEFAULT '',
+  `alt_url` varchar(190) NOT NULL DEFAULT '',
+  `descr` varchar(255) NOT NULL DEFAULT '',
+  `num_elem` int(11) NOT NULL DEFAULT '0',
+  `date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `create_date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `cover` varchar(255) NOT NULL DEFAULT '',
+  `news_ids` text NOT NULL,
+  `keywords` text NOT NULL,
+  `metatitle` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  KEY `user_name` (`user_name`),
+  KEY `name` (`name`),
+  KEY `alt_url` (`alt_url`),
+) ENGINE=InnoDB DEFAULT CHARACTER SET {charset} COLLATE {charset}_general_ci;
+
+ALTER TABLE `{prefix}_post` ADD `collections` varchar(190) NOT NULL DEFAULT '0' AFTER `category`;
+ALTER TABLE `{prefix}_users` ADD `favorites_collections` text NOT NULL;
+INSERT INTO `{prefix}_admin_sections` (`name`, `title`, `descr`, `icon`, `allow_groups`) VALUES ('news_collections', 'Подборки новостей', '', '', '1');]]></mysqlinstall>
+	<mysqlupgrade><![CDATA[]]></mysqlupgrade>
+	<mysqlenable><![CDATA[]]></mysqlenable>
+	<mysqldisable><![CDATA[]]></mysqldisable>
+	<mysqldelete><![CDATA[DROP TABLE IF EXISTS {prefix}_news_collections;
+ALTER TABLE `{prefix}_users` DROP `favorites_collections`;
+DELETE FROM `{prefix}_admin_sections` WHERE name = 'news_collections';]]></mysqldelete>
+	<file name="engine/engine.php">
+		<operation action="after">
+			<searchcode><![CDATA[elseif ($do == 'stats') $nam_e = $lang['title_stats'];]]></searchcode>
+			<replacecode><![CDATA[elseif ($do == 'collections') {
+	$nam_e = $config['collection_speedbar'];
+	if ( $collections_id ) {
+      
+		if( $seo_tags ) $metatags['keywords'] = $seo_tags;
+		$metatags['header_title'] = $seo_title;
+		$metatags['description'] = $seo_descr;
+		$titl_e = $seo_title;           
+ 
+		if ( ( isset($_GET['cstart']) AND intval($_GET['cstart']) > 1 ) ){
+
+		if ( isset($_GET['cstart']) AND intval($_GET['cstart']) > 1 ) $titl_e .= ' &raquo; '.$lang['news_site'].' '.intval($_GET['cstart']);
+		else $titl_e .= ' &raquo; '.$lang['news_site'].' '.intval($_GET['news_page']);
+
+		}
+ 
+	} else {
+      
+
+		$metatags['keywords'] = $config['collection_keywords'];
+		$metatags['header_title'] = $config['collection_title'];
+		$metatags['description'] = $config['collection_description'];
+		
+		if( $_GET['action'] == 'favorites' ) $titl_e = 'Закладки';
+		
+		if ( ( isset($_GET['cstart']) AND intval($_GET['cstart']) > 1 ) ){
+			
+		if( $_GET['action'] == 'favorites' ) $titl_e .= ' &raquo; ';
+		if ( isset($_GET['cstart']) AND intval($_GET['cstart']) > 1 ) $titl_e .= $lang['news_site'].' '.intval($_GET['cstart']);
+		else $titl_e .= $lang['news_site'].' '.intval($_GET['news_page']);
+
+		}		
+	} 
+  
+	if( $config['collection_disable_index'] ) $disable_index = true;
+	$view_template = false;
+}]]></replacecode>
+		</operation>
+		<operation action="replace">
+			<searchcode><![CDATA[} elseif ($nam_e) $s_navigation .= " {$config['speedbar_separator']} " . $nam_e;]]></searchcode>
+			<replacecode><![CDATA[} elseif ( $do =='collections' AND ( $collections_id OR $is_fav OR isset($_GET['cstart']) AND intval($_GET['cstart']) > 1 ) ) {
+  
+		if ($config['allow_alt_url']) $s_navigation .= " {$config['speedbar_separator']} <span itemscope itemtype=\"http://data-vocabulary.org/Breadcrumb\"><a href=\"" . $config['http_home_url'] . "collections/\" itemprop=\"url\"><span itemprop=\"title\">{$config['collection_speedbar']}</span></a></span>";
+		else $s_navigation .= " {$config['speedbar_separator']} <span itemscope itemtype=\"http://data-vocabulary.org/Breadcrumb\"><a href=\"?do=collections\" itemprop=\"url\"><span itemprop=\"title\">{$config['collection_speedbar']}</span></a></span>";	
+
+} elseif ($nam_e) $s_navigation .= " {$config['speedbar_separator']} " . $nam_e;]]></replacecode>
+		</operation>
+		<operation action="after">
+			<searchcode><![CDATA[switch ( $do ) {]]></searchcode>
+			<replacecode><![CDATA[case "collections" :
+	include (DLEPlugins::Check(ENGINE_DIR . '/modules/news_collections.php'));
+	break;]]></replacecode>
+		</operation>
+	</file>
+	<file name="engine/modules/show.short.php">
+		<operation action="after">
+			<searchcode><![CDATA[if( $category_id and $cat_info[$category_id]['short_tpl'] != '' ) $tpl->load_template( $cat_info[$category_id]['short_tpl'] . '.tpl' );]]></searchcode>
+			<replacecode><![CDATA[elseif( $view_template == "collections" ) $tpl->load_template( 'shortstory_collections.tpl' );]]></replacecode>
+		</operation>
+		<operation action="before">
+			<searchcode><![CDATA[$db->free( $sql_result );]]></searchcode>
+			<replacecode><![CDATA[if( $view_template == "collections" ) $view_template = "";]]></replacecode>
+		</operation>
+		<operation action="after">
+			<searchcode><![CDATA[if( !$view_template AND $count_all AND $config['news_navigation'] AND $news_found) {]]></searchcode>
+			<replacecode><![CDATA[if( $do == 'collections' ) {
+  
+  if( $collections_id ) {
+    if( $config['allow_alt_url'] ) $url_page .= '/' . $do . '/'.$collections_id . '-' . $collections['alt_url'];
+    else $ucid = '?do=' . $do . '&id='.$collections_id;
+  } else {
+    if( $config['allow_alt_url'] ) $url_page .= '/' . $do;
+    else $ucid = '?do=' . $do;
+  }
+
+} else $ucid = '';]]></replacecode>
+		</operation>
+		<operation action="replace">
+			<searchcode><![CDATA[if ($user_query) $prev_page = $PHP_SELF . "?" . $user_query;
+else $prev_page = $config['http_home_url'];]]></searchcode>
+			<replacecode><![CDATA[if( $do == 'collections' ) {
+  
+	if ($user_query) $prev_page = $PHP_SELF . $ucid . $user_query;
+	else $prev_page = $config['http_home_url'] . $ucid;
+    
+} else {
+  
+	if ($user_query) $prev_page = $PHP_SELF . "?" . $user_query;
+	else $prev_page = $config['http_home_url']; 
+  
+}]]></replacecode>
+		</operation>
+		<operation action="replace">
+			<searchcode><![CDATA[if ($user_query) $next = $PHP_SELF . "?cstart=" . $next_page . "&amp;" . $user_query;
+else $next = $PHP_SELF . "?cstart=" . $next_page;]]></searchcode>
+			<replacecode><![CDATA[if( $do == 'collections' ) {
+  
+	if ($user_query) $next = $PHP_SELF . $ucid . "&cstart=" . $next_page . "&amp;" . $user_query;
+	else $next = $PHP_SELF . $ucid ."&cstart=" . $next_page;
+    
+} else {
+  
+	if ($user_query) $next = $PHP_SELF . "?cstart=" . $next_page . "&amp;" . $user_query;
+	else $next = $PHP_SELF . "?cstart=" . $next_page;
+  
+}]]></replacecode>
+		</operation>
+		<operation action="replace">
+			<searchcode><![CDATA[if ($j == 1)
+	$pages .= "<a href=\"" . $url_page . "/\">$j</a> ";
+else
+	$pages .= "<a href=\"" . $url_page . "/page/" . $j . "/\">$j</a> ";]]></searchcode>
+			<replacecode><![CDATA[if( $do == 'collections' ) {
+  
+	if ($j == 1)
+		$pages .= "<a href=\"" . $url_page . "\">$j</a> ";
+	else
+		$pages .= "<a href=\"" . $url_page . "/page/" . $j . "\">$j</a> ";
+    
+} else {
+  
+	if ($j == 1)
+		$pages .= "<a href=\"" . $url_page . "/\">$j</a> ";
+	else
+		$pages .= "<a href=\"" . $url_page . "/page/" . $j . "/\">$j</a> ";
+  
+}]]></replacecode>
+		</operation>
+		<operation action="replace">
+			<searchcode><![CDATA[if ($user_query) {
+	$pages .= "<a href=\"{$PHP_SELF}?{$user_query}\">$j</a> ";
+} else $pages .= "<a href=\"{$config['http_home_url']}\">$j</a> ";]]></searchcode>
+			<replacecode><![CDATA[if( $do == 'collections' ) {
+  
+	if ($user_query) {
+		$pages .= "<a href=\"{$PHP_SELF}{$ucid}{$user_query}\">$j</a> ";
+	} else $pages .= "<a href=\"{$config['http_home_url']}{$ucid}\">$j</a> ";
+    
+} else {
+  
+	if ($user_query) {
+		$pages .= "<a href=\"{$PHP_SELF}?{$user_query}\">$j</a> ";
+	} else $pages .= "<a href=\"{$config['http_home_url']}\">$j</a> ";
+  
+}]]></replacecode>
+		</operation>
+		<operation action="replace">
+			<searchcode><![CDATA[if ($user_query) {
+	$pages .= "<a href=\"$PHP_SELF?cstart=$j&amp;$user_query\">$j</a> ";
+} else $pages .= "<a href=\"$PHP_SELF?cstart=$j\">$j</a> ";]]></searchcode>
+			<replacecode><![CDATA[if( $do == 'collections' ) {
+  
+	if ($user_query) {
+		$pages .= "<a href=\"$PHP_SELF{$ucid}&cstart=$j&amp;$user_query\">$j</a> ";
+	} else $pages .= "<a href=\"$PHP_SELF{$ucid}&cstart=$j\">$j</a> ";
+    
+} else {
+  
+	if ($user_query) {
+		$pages .= "<a href=\"$PHP_SELF?cstart=$j&amp;$user_query\">$j</a> ";
+	} else $pages .= "<a href=\"$PHP_SELF?cstart=$j\">$j</a> ";
+  
+}]]></replacecode>
+		</operation>
+		<operation action="replace">
+			<searchcode><![CDATA[if ($prev == 1)
+	$prev_page = $url_page . "/";
+else
+	$prev_page = $url_page . "/page/" . $prev . "/";]]></searchcode>
+			<replacecode><![CDATA[if( $do == 'collections' ) {
+  
+	if ($prev == 1)
+		$prev_page = $url_page;
+	else
+		$prev_page = $url_page . "/page/" . $prev;
+    
+} else {
+  
+	if ($prev == 1)
+		$prev_page = $url_page . "/";
+	else
+		$prev_page = $url_page . "/page/" . $prev . "/";
+  
+}]]></replacecode>
+		</operation>
+		<operation action="replace">
+			<searchcode><![CDATA[$next = $url_page . '/page/' . $next_page . '/';]]></searchcode>
+			<replacecode><![CDATA[if( $do == 'collections' ) $next = $url_page . '/page/' . $next_page;
+else $next = $url_page . '/page/' . $next_page . '/';]]></replacecode>
+		</operation>
+	</file>
+	<file name="engine/modules/show.full.php">
+		<operation action="before">
+			<searchcode><![CDATA[$allow_list = explode( ',', $user_group[$member_id['user_group']]['allow_cats'] );]]></searchcode>
+			<replacecode><![CDATA[$collections_info = get_vars ( "collections" );
+
+if (!is_array ( $collections_info )) {
+	$collections_info = array ();
+
+	$db->query ( "SELECT id, user_name, name, alt_url, descr, num_elem, date, create_date, cover FROM " . PREFIX . "_news_collections ORDER BY id ASC" );
+	while ( $row = $db->get_row () ) {
+
+		$collections_info[$row['id']] = array ();
+
+		foreach ( $row as $key => $value ) {
+			$collections_info[$row['id']][$key] = stripslashes ( $value );
+		}
+
+	}
+	set_vars ( "collections", $collections_info );
+	$db->free ();
+}]]></replacecode>
+		</operation>
+		<operation action="after">
+			<searchcode><![CDATA[if ($config['category_separator'] != ',') $config['category_separator'] = ' '.$config['category_separator'];]]></searchcode>
+			<replacecode><![CDATA[if( !$row['collections'] ) {
+  	$tpl->set_block( "'\\[not-collections\\](.*?)\\[/not-collections\\]'si", "" );
+} else {
+			
+	$collections = array ();
+	$collections_link = array ();
+	$collections_list = explode( ',', $row['collections'] );
+	$config['collection_separator'] = $config['collection_separator'] ? $config['collection_separator'] : ',';	
+	if( count( $collections_list ) == 1 ) {
+				
+		$collections[] = $collections_info[$collections_list[0]]['name'];
+      
+		if( $config['allow_alt_url'] )		
+			$collections_link = "<a href=\"" . $config['http_home_url'] . "collections/{$collections_info[$collections_list[0]]['id']}-{$collections_info[$collections_list[0]]['alt_url']}" . "\">{$collections_info[$collections_list[0]]['name']}</a>";
+		else		
+      		$collections_link = "<a href=\"$PHP_SELF?do=collections&amp;id={$collections_info[$collections_list[0]]['id']}\">{$collections_info[$collections_list[0]]['name']}</a>";
+          
+	} else {
+				
+		foreach ( $collections_list as $element ) {
+					
+			if( $element ) {
+				$collections[] = $collections_info[$element]['name'];
+              
+				if( $config['allow_alt_url'] )		
+					$collections_link = "<a href=\"" . $config['http_home_url'] . "collections/{$collections_info[$element]['id']}-{$collections_info[$element]['alt_url']}" . "\">{$collections_info[$element]['name']}</a>";
+				else		
+      				$collections_link[] = "<a href=\"$PHP_SELF?do=collections&amp;id={$collections_info[$element]['id']}\">{$collections_info[$element]['name']}</a>";
+              
+			}
+		}
+				
+		$collections_link = implode( "{$config['collection_separator']}", $collections_link );
+	}
+			
+	$collections = implode( "{$config['collection_separator']}", $collections );
+
+    $tpl->set( '{collections-link}', 'Подборки: ' . $collections_link );
+   	$tpl->set( '{collections}', 'Подборки: ' . $collections );
+  	$tpl->set( '[not-collections]', "" );
+	$tpl->set( '[/not-collections]', "" );
+}]]></replacecode>
+		</operation>
+	</file>
+	<file name="engine/init.php">
+		<operation action="after">
+			<searchcode><![CDATA[$tpl->set( '{favorites-link}', $config['http_home_url'] . "favorites/" );]]></searchcode>
+			<replacecode><![CDATA[$tpl->set( '{favorites-collections-link}', $config['http_home_url'] . "collections/favorites" );]]></replacecode>
+		</operation>
+		<operation action="after">
+			<searchcode><![CDATA[$tpl->set( '{favorites-link}', $PHP_SELF . "?do=favorites" );]]></searchcode>
+			<replacecode><![CDATA[$tpl->set( '{favorites-collections-link}', $PHP_SELF . "?do=collections&action=favorites" );]]></replacecode>
+		</operation>
+	</file>
+	<file name="engine/ajax/collections_favorites.php">
+		<operation action="create">
+			<replacecode><![CDATA[<?php
+if(!defined('DATALIFEENGINE')) {
+	header( "HTTP/1.1 403 Forbidden" );
+	header ( 'Location: ../../' );
+	die( "Hacking attempt!" );
+}
+
+if( !$is_logged ) die( "error" );
+
+$id = intval( $_REQUEST['fav_id'] );
+
+if( !$id OR $id < 1) die( "error" );
+
+if( $_REQUEST['user_hash'] == "" OR $_REQUEST['user_hash'] != $dle_login_hash ) {
+
+	die ("error");
+	
+}
+	
+if( $_REQUEST['action'] == "plus" ) {
+	$error = "";
+	
+	$list = explode( ",", $member_id['favorites_collections'] );
+	
+	foreach ( $list as $daten ) {
+
+		if( $daten == $id ) $error = "stop";
+
+	}
+	
+	if( $error != "stop" ) {
+
+		$list[] = $id;
+		$favorites = $db->safesql(implode( ",", $list ));
+		
+		
+		if( $member_id['favorites_collections'] == "" ) $favorites = $id;
+
+		
+		$member_id['favorites'] = $favorites;
+		
+		$db->query( "UPDATE " . USERPREFIX . "_users SET favorites_collections='{$favorites}' WHERE user_id = '{$member_id['user_id']}'" );
+	
+	}
+
+	if ( $_REQUEST['alert'] ) $buffer = $lang['fav_plus'];
+	else {
+	$buffer = "<img src=\"" . $config['http_home_url'] . "templates/{$config['skin']}/dleimages/minus_fav.gif\" onclick=\"doFavorites_collections('" . $id . "', 'minus'); return false;\" title=\"" . $lang['news_minfav'] . "\" style=\"vertical-align: middle;border: none;\" />";
+	}
+
+} elseif( $_REQUEST['action'] == "minus" ) {
+	
+	$list = explode( ",", $member_id['favorites_collections'] );
+
+	$i = 0;
+	
+	foreach ( $list as $daten ) {
+
+		if( $daten == $id ) unset( $list[$i] );
+		$i ++;
+
+	}
+	
+	if( count( $list ) ) $favorites = $db->safesql(implode( ",", $list ));
+	else $favorites = "";
+
+	$db->query( "UPDATE " . USERPREFIX . "_users SET favorites_collections='{$favorites}' WHERE user_id = '{$member_id['user_id']}'" );
+
+	if ( $_REQUEST['alert'] ) $buffer = $lang['fav_minus'];
+	else {
+		$buffer = "<img src=\"" . $config['http_home_url'] . "templates/{$config['skin']}/dleimages/plus_fav.gif\" onclick=\"doFavorites_collections('" . $id . "', 'plus'); return false;\" title=\"" . $lang['news_addfav'] . "\" style=\"vertical-align: middle;border: none;\" />";
+	}
+
+} else die( "error" );
+
+$db->close();
+
+echo $buffer;
+?>]]></replacecode>
+		</operation>
+	</file>
+	<file name="engine/editor/shortnews.php">
+		<operation action="after">
+			<searchcode><![CDATA[} else $implugin = 'insertImage';]]></searchcode>
+			<replacecode><![CDATA[if ($mod == "collections") {
+	$image_upload = ""; $image_q_upload = "";
+}]]></replacecode>
+		</operation>
+	</file>
+</dleplugin>
