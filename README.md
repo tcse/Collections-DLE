@@ -25,7 +25,16 @@
   - {collections} - Выводит простые названия текстом.
   - {collections-link} - Выводит названия в виде ссылок.
 
-
+# ЧПУ
+Добавить ниже `RewriteEngine On`
+```
+RewriteRule ^collections/([0-9]+)-(.*)/page/([0-9]+)(/?)+$ index.php?do=collections&id=$1&cstart=$3 [L]
+RewriteRule ^collections/([0-9]+)-(.*)(/?)+$ index.php?do=collections&id=$1 [L]
+RewriteRule ^collections/favorites(/?)+$ index.php?do=collections&action=favorites [L]
+RewriteRule ^collections/favorites/page/([0-9]+)(/?)+$ index.php?do=collections&action=favorites&cstart=$1 [L]
+RewriteRule ^collections/page/([0-9]+)(/?)+$ index.php?do=collections&cstart=$1 [L]
+RewriteRule ^collections(/?)$ index.php?do=collections [L]
+```
 # Скриншоты
 
 <p>
