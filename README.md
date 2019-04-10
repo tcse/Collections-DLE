@@ -26,7 +26,7 @@
   - {collections-link} - Выводит названия в виде ссылок.
 
 # ЧПУ
-Добавить ниже `RewriteEngine On`
+В файле `.htaccess` Добавить ниже строки `RewriteEngine On`
 ```
 RewriteRule ^collections/([0-9]+)-(.*)/page/([0-9]+)(/?)+$ index.php?do=collections&id=$1&cstart=$3 [L]
 RewriteRule ^collections/([0-9]+)-(.*)(/?)+$ index.php?do=collections&id=$1 [L]
